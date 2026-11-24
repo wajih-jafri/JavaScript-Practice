@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <section id="welcomeScreen" class="screen">
+        <h1> Study App</h1>
+        <p>Learn something new with every spin!</p>
+        <button id="startBtn">Get Started</button>
+    </section>
+
+    <section id="dashboardScreen" class="screen">
+        <header>
+            <div>
+                <h1> Study App</h1>
+                <p>Choose a subject and challenge yourself!</p>
+            </div>
+            <button id="logoutBtn">Home</button>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Best Score</h3>
+                <p id="bestScore">0</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>Total Attempts</h3>
+                <p id="totalAttempts">0</p>
+            </div>
+        </div>
+
+        <h2>Choose Your Subject</h2>
+
+        <div class="subjects">
+            <button class="subject-card" data-subject="Programming">
+                <h3>Programming</h3>
+                <p>Test your coding knowledge</p>
+            </button>
+
+            <button class="subject-card" data-subject="Database">
+                <h3>Database</h3>
+                <p>Explore database concepts</p>
+            </button>
+
+            <button class="subject-card" data-subject="Web Development">
+                <h3>Web Development</h3>
+                <p>Challenge your web skills</p>
+            </button>
+
+            <button class="subject-card" data-subject="Mathematics"> 
+                <h3>Mathematics</h3>
+                <p>Test your calculations</p>
+            </button>
+
+            <button class="subject-card" data-subject="Artificial Intelligence">   
+                <h3>Artificial Intelligence</h3>
+                <p>Explore the world of AI</p>
+            </button>
+
+            <button class="subject-card" data-subject="General Knowledge">
+                <h3>General Knowledge</h3>
+                <p>Test what you know</p>
+            </button>
+        </div>
+    </section>
+
+    <section id="quizScreen" class="screen">
+        <header>
+            <h1> Study App</h1>
+            <button id="dashboardBtn">Dashboard</button>
+        </header>
+
+        <div class="quiz-box">
+            <h2 id="quizSubject"></h2>
+
+            <div class="quiz-info">
+                <span id="questionNumber"></span>
+                <span id="score">Score: 0</span>
+            </div>
+
+            <h3 id="questionText"></h3>
+            <div id="options"></div>
+
+            <p id="message"></p>
+            <button id="submitBtn">Submit Answer</button>
+            <button id="nextBtn" disabled>Next Question</button>
+            <button id="skipBtn">Skip</button>
+        </div>
+    </section>
+
+    <section id="resultScreen" class="screen">
+        <div class="result-box">
+            <h1> Quiz Completed!</h1>
+            <h2 id="finalScore"></h2>
+            <p id="resultMessage"></p>
+            <button id="playAgainBtn">Play Again</button>
+            <button id="resultDashboardBtn">Back to Dashboard</button>
+        </div>
+    </section>
+
+</div>
+
+<script>
+let questions = [
+    { subject: "Programming", question: "Which keyword declares a variable in JavaScript?", options: ["int", "let", "define", "varname"], answer: "let" },
+    { subject: "Programming", question: "Which symbol checks strict equality?", options: ["=", "==", "===", "!="], answer: "===" },
+
+    { subject: "Database", question: "Which SQL command retrieves data?", options: ["INSERT", "UPDATE", "SELECT", "DELETE"], answer: "SELECT" },
+    { subject: "Database", question: "Which key uniquely identifies a record?", options: ["Foreign Key", "Primary Key", "Duplicate Key", "None"], answer: "Primary Key" },
+
+    { subject: "Web Development", question: "Which HTML tag creates a hyperlink?", options: ["<link>", "<a>", "<href>", "<url>"], answer: "<a>" },
+    { subject: "Web Development", question: "Which language styles web pages?", options: ["HTML", "CSS", "SQL", "Python"], answer: "CSS" },
+
+    { subject: "Mathematics", question: "What is 15% of 200?", options: ["20", "25", "30", "35"], answer: "30" },
+    { subject: "Mathematics", question: "What is the square of 9?", options: ["18", "72", "81", "99"], answer: "81" },
+
+    { subject: "Artificial Intelligence", question: "What does AI stand for?", options: ["Automated Information", "Artificial Intelligence", "Advanced Internet", "Automatic Integration"], answer: "Artificial Intelligence" },
+    { subject: "Artificial Intelligence", question: "Which field allows computers to learn from data?", options: ["Machine Learning", "Web Design", "Networking", "Database Management"], answer: "Machine Learning" },
+
+    { subject: "General Knowledge", question: "What is the capital of Pakistan?", options: ["Lahore", "Karachi", "Islamabad", "Peshawar"], answer: "Islamabad" },
+    { subject: "General Knowledge", question: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Mercury"], answer: "Mars" }
+];
+let currentSubject = "";
+let quizQuestions = [];
+let questionIndex = 0;
+let score = 0;
+let answered = false;
+
+let screens = document.getElementsByClassName("screen");
+let options = document.getElementById("options");
+
+function showScreen(id) {
+    for (let screen of screens) {
+        screen.style.display = "none";
+    }
+    document.getElementById(id).style.display = "block";
+}
+function getStats() {
+    return JSON.parse(localStorage.getItem("studyStats")) || {
+        bestScore: 0,
+        attempts: 0
+    };
+}
+function updateStats() {
+    let stats = getStats();
+
+    document.getElementById("bestScore").textContent = stats.bestScore;
+    document.getElementById("totalAttempts").textContent = stats.attempts;
+}
+function saveStats() {
+    let stats = getStats();
+
+    stats.attempts++;
+
+    if (score > stats.bestScore) {
+        stats.bestScore = score;
+    }
+
+    localStorage.setItem("studyStats", JSON.stringify(stats));
+}
+document.getElementById("startBtn").addEventListener("click", function() {
+    updateStats();
+    showScreen("dashboardScreen");
+});
+
+let subjectCards = document.getElementsByClassName("subject-card");
+
+for (let card of subjectCards) {
+    card.addEventListener("click", function() {
+        currentSubject = this.dataset.subject;
+
+        quizQuestions = questions.filter(function(item) {
+            return item.subject === currentSubject;
+        });
+
+        questionIndex = 0;
+        score = 0;
+
+        showScreen("quizScreen");
+        startQuestion();
+    });
+}
+function startQuestion() {
+    answered = false;
+
+    let question = quizQuestions[questionIndex];
+
+    document.getElementById("quizSubject").textContent = currentSubject;
+    document.getElementById("questionNumber").textContent =
+        "Question " + (questionIndex + 1) + " of " + quizQuestions.length;
+
+    document.getElementById("score").textContent = "Score: " + score;
+    document.getElementById("questionText").textContent = question.question;
+
+    options.innerHTML = "";
+
+    for (let option of question.options) {
+        options.innerHTML +=
+            '<label><input type="radio" name="answer" value="' + option + '"> ' +
+            option + '</label>';
+    }
+
+    document.getElementById("submitBtn").disabled = false;
+    document.getElementById("nextBtn").disabled = true;
+    document.getElementById("skipBtn").disabled = false;
+}
+
+document.getElementById("submitBtn").addEventListener("click", function() {
+    if (answered) return;
+
+    let selected = document.querySelector('input[name="answer"]:checked');
+
+    if (!selected) {
+        alert("Please select an answer!");
+        return;
+    }
+
+    answered = true;
+
+    if (selected.value === quizQuestions[questionIndex].answer) {
+        score++;
+        alert("Correct Answer");
+    } else {
+        alert("Incorrect Answer! The correct answer is: " +
+            quizQuestions[questionIndex].answer);
+    }
+
+    document.getElementById("score").textContent = "Score: " + score;
+    this.disabled = true;
+    document.getElementById("nextBtn").disabled = false;
+});
+
+function nextQuestion() {
+    questionIndex++;
+
+    if (questionIndex < quizQuestions.length) {
+        startQuestion();
+    } else {
+        finishQuiz();
+    }
+}
+
+document.getElementById("nextBtn").addEventListener("click", nextQuestion);
+document.getElementById("skipBtn").addEventListener("click", nextQuestion);
+
+function finishQuiz() {
+    saveStats();
+
+    document.getElementById("finalScore").textContent =
+        score + " / " + quizQuestions.length;
+
+    document.getElementById("resultMessage").textContent =
+        "You completed the " + currentSubject + " quiz!";
+
+    showScreen("resultScreen");
+}
+
+document.getElementById("dashboardBtn").addEventListener("click", function() {
+    updateStats();
+    showScreen("dashboardScreen");
+});
+
+document.getElementById("resultDashboardBtn").addEventListener("click", function() {
+    updateStats();
+    showScreen("dashboardScreen");
+});
+
+document.getElementById("playAgainBtn").addEventListener("click", function() {
+    questionIndex = 0;
+    score = 0;
+    showScreen("quizScreen");
+    startQuestion();
+});
+
+document.getElementById("logoutBtn").addEventListener("click", function() {
+    showScreen("welcomeScreen");
+});
+
+showScreen("welcomeScreen");
+</script>
+
+</body>
+</html>
